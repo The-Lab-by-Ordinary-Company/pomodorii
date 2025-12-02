@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@font-face {
+  font-family: "Wii Sans";
+  src: url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.eot");
+  src: url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.eot?#iefix")format("embedded-opentype"),
+  url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.woff2")format("woff2"),
+  url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.woff")format("woff"),
+  url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.ttf")format("truetype"),
+  url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.svg#Wii Sans")format("svg");
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  font-family: 'Wii Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #eef2f5;
+  background-image: radial-gradient(circle at 50% 50%, #ffffff 0%, #eef2f5 100%);
+  min-height: 100vh;
+  position: relative;
+  color: #4b5563;
+}
+
+.dark body {
+  background-color: #000000;
+  background-image: radial-gradient(circle at 50% 50%, #171717 0%, #000000 100%);
+  color: #e5e7eb;
+}
+
+/* Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float-wii {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+}
+
+@keyframes scroll-text {
+  0% { transform: translateX(150px); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Rainbow Orb */
+.orb-container {
+  filter: blur(40px);
+  opacity: 0.8;
+  transition: all 1s ease;
+}
+
+.orb-wrapper.active .orb-container {
+  filter: blur(30px);
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Wii-style Glassy UI */
+.wii-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 15px -3px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.dark .wii-panel {
+  background: rgba(10, 10, 10, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.5),
+      0 10px 15px -3px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.wii-panel-pressed {
+  background: linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 1px solid #d1d5db;
+  box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.05),
+      0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+.dark .wii-panel-pressed {
+  background: linear-gradient(180deg, #000000 0%, #171717 100%);
+  border: 1px solid #404040;
+  box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.8),
+      0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.wii-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+  border: 1px solid #d1d5db;
+  box-shadow: 
+      0 2px 4px rgba(0,0,0,0.05),
+      inset 0 1px 0 rgba(255,255,255,1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dark .wii-btn {
+  background: linear-gradient(180deg, #262626 0%, #0a0a0a 100%);
+  border: 1px solid #525252;
+  box-shadow:
+      0 2px 4px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+  color: #e5e5e5;
+}
+
+.wii-btn:hover {
+  border-color: #38bdf8;
+  box-shadow:
+      0 0 0 4px rgba(56, 189, 248, 0.15),
+      inset 0 1px 0 rgba(255,255,255,1);
+  transform: scale(1.05);
+  color: #0ea5e9;
+}
+
+.dark .wii-btn:hover {
+  border-color: #0ea5e9;
+  box-shadow:
+      0 0 0 4px rgba(14, 165, 233, 0.3),
+      inset 0 1px 0 rgba(255,255,255,0.1);
+  color: #38bdf8;
+}
+
+.wii-btn:active {
+  transform: scale(0.95);
+}
+
+.wii-pill-active {
+  background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%);
+  color: #0891b2;
+  border: 1px solid #67e8f9;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .wii-pill-active {
+  background: linear-gradient(180deg, #0e7490 0%, #155e75 100%);
+  color: #cffafe;
+  border: 1px solid #06b6d4;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.timer-nums {
+  font-variant-numeric: tabular-nums;
+  font-family: 'Wii Sans', sans-serif;
+  color: #9ca3af;
+  text-shadow: 1px 1px 0px rgba(255,255,255,1);
+}
+
+.dark .timer-nums {
+  color: #6b7280;
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+}
+
+.timer-nums.active {
+  color: #4b5563;
+}
+
+.dark .timer-nums.active {
+  color: #f3f4f6;
+}
+
+/* Hide scrollbar globally, but allow custom scrollbar class */
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar for Wii panels */
+.wii-scrollbar::-webkit-scrollbar {
+  width: 12px;
+  display: block;
+}
+
+.wii-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 16px 0;
+}
+
+.wii-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.dark .wii-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.wii-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dark .wii-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
