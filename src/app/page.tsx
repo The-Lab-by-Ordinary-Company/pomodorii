@@ -346,6 +346,8 @@ export default function Home() {
   const gainNodeRef = useRef<GainNode | null>(null);
   const musicSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioBufferRef = useRef<AudioBuffer | null>(null);
+  const loopStartRef = useRef<number>(0);
+  const loopEndRef = useRef<number>(0);
   const [isAudioContextReady, setIsAudioContextReady] = useState(false);
 
   useEffect(() => {
@@ -376,7 +378,32 @@ export default function Home() {
           const response = await fetch(`/sound-fx/main-theme.wav?v=${Date.now()}`);
           const arrayBuffer = await response.arrayBuffer();
           const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+          
+          // Analyze for silence to ensure perfect loop without gaps
+          const channelData = decodedBuffer.getChannelData(0);
+          let start = 0;
+          let end = channelData.length;
+          const threshold = 0.01;
+
+          // Find true start (skip silence)
+          for (let i = 0; i < channelData.length; i++) {
+            if (Math.abs(channelData[i]) > threshold) {
+              start = i;
+              break;
+            }
+          }
+
+          // Find true end (skip trailing silence)
+          for (let i = channelData.length - 1; i >= 0; i--) {
+            if (Math.abs(channelData[i]) > threshold) {
+              end = i + 1;
+              break;
+            }
+          }
+
           audioBufferRef.current = decodedBuffer;
+          loopStartRef.current = start / decodedBuffer.sampleRate;
+          loopEndRef.current = end / decodedBuffer.sampleRate;
           
           setIsAudioContextReady(true);
         } catch (e) {
@@ -421,8 +448,11 @@ export default function Home() {
           const source = ctx.createBufferSource();
           source.buffer = buffer;
           source.loop = true;
+          // Use calculated loop points to skip any silence in the file
+          source.loopStart = loopStartRef.current;
+          source.loopEnd = loopEndRef.current;
           source.connect(gainNode);
-          source.start(0);
+          source.start(0, loopStartRef.current); // Start at the actual audio start
           musicSourceRef.current = source;
         }
       });
