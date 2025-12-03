@@ -337,6 +337,35 @@ export default function Home() {
 
   const t = TRANSLATIONS[language]; // Helper for current translation
 
+  // Preload sounds
+  const sounds = useRef<{ [key: string]: HTMLAudioElement } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sounds.current = {
+        'button-press': new Audio('/sound-fx/button-press.wav'),
+        'close-delete': new Audio('/sound-fx/close-delete.wav'),
+        'alarm': new Audio('/sound-fx/alarm.wav'),
+      };
+      // Preload audio files
+      Object.values(sounds.current).forEach(audio => {
+        audio.preload = 'auto';
+        audio.volume = 0.5;
+      });
+    }
+  }, []);
+
+  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm', force = false) => {
+    if (!sounds.current) return;
+    if (!force && isMuted) return;
+    
+    const audio = sounds.current[sound];
+    if (audio) {
+      audio.currentTime = 0; // Reset to start for instant replay
+      audio.play().catch(e => console.log("Audio play prevented:", e));
+    }
+  }, [isMuted]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -369,6 +398,7 @@ export default function Home() {
   // Task Logic
   const addTask = () => {
     if (newTaskTitle.trim() === "") return;
+    playSound("button-press");
     const newTask: Task = {
       id: crypto.randomUUID(),
       title: newTaskTitle,
@@ -379,6 +409,7 @@ export default function Home() {
   };
 
   const toggleTask = useCallback((id: string) => {
+    playSound("button-press");
     setTasks((prev) => {
       const taskIndex = prev.findIndex((t) => t.id === id);
       if (taskIndex === -1) return prev;
@@ -399,11 +430,13 @@ export default function Home() {
   }, [settings.checkToBottom]);
 
   const deleteTask = (id: string) => {
+    playSound("close-delete");
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
   // Handle auto-switch logic
   const handleTimerComplete = useCallback(() => {
+    playSound("alarm");
     setIsRunning(false);
     setIsFinished(true);
     setStatusText(t.status.finished);
@@ -457,7 +490,7 @@ export default function Home() {
         setIsRunning(true); // Auto-start
       }
     }
-  }, [currentMode, pomodorosCompleted, settings, t.status.finished]);
+  }, [currentMode, pomodorosCompleted, settings, t.status.finished, playSound]);
 
   // Timer tick effect
   useEffect(() => {
@@ -488,12 +521,14 @@ export default function Home() {
 
   const toggleTimer = () => {
     if (isRunning) {
+      playSound("close-delete");
       setIsRunning(false);
       setStatusText(t.status.paused);
       setStatusClass(
         "px-4 py-1 rounded-full bg-white/50 dark:bg-gray-800/50 border border-white dark:border-gray-700 text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-bold shadow-sm"
       );
     } else {
+      playSound("button-press");
       setIsRunning(true);
       setStatusText(currentMode === "focus" ? t.status.focusing : t.status.break);
       setStatusClass(
@@ -503,6 +538,7 @@ export default function Home() {
   };
 
   const resetTimer = () => {
+    playSound("button-press");
     setIsRunning(false);
     // Use current settings for reset
     const minutes =
@@ -519,6 +555,7 @@ export default function Home() {
   };
 
   const switchMode = (mode: Mode) => {
+    playSound("button-press");
     setCurrentMode(mode);
     setIsRunning(false);
     const minutes =
@@ -581,9 +618,12 @@ export default function Home() {
   }) => (
     <div className="flex items-center justify-between py-1">
       <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{label}</span>
-      <div
-        onClick={() => onChange(!checked)}
-        className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 ease-in-out ${
+        <div
+          onClick={() => {
+            onChange(!checked);
+            playSound("button-press");
+          }}
+          className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 ease-in-out ${
           checked ? "bg-cyan-400 dark:bg-cyan-600" : "bg-gray-200 dark:bg-gray-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
         }`}
       >
@@ -669,7 +709,10 @@ export default function Home() {
           </span>
         </div>
         <button
-          onClick={() => setIsSettingsOpen(true)}
+          onClick={() => {
+            setIsSettingsOpen(true);
+            playSound("button-press");
+          }}
           className="wii-btn p-2.5 rounded-full bg-white dark:bg-gray-800"
         >
           <Settings2 className="w-5 h-5" />
@@ -681,7 +724,10 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-white/30 dark:bg-black/50 backdrop-blur-md"
-            onClick={() => setIsSettingsOpen(false)}
+            onClick={() => {
+              setIsSettingsOpen(false);
+              playSound("close-delete");
+            }}
           ></div>
 
           <div 
@@ -695,7 +741,10 @@ export default function Home() {
                 {t.settings.title}
               </h2>
               <button
-                onClick={() => setIsSettingsOpen(false)}
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  playSound("close-delete");
+                }}
                 className="wii-btn p-2 rounded-full hover:bg-red-50 hover:border-red-200 hover:text-red-400 group"
               >
                 <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
@@ -778,7 +827,10 @@ export default function Home() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100/50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
                   <button 
-                    onClick={() => setTheme("light")}
+                    onClick={() => {
+                      setTheme("light");
+                      playSound("button-press");
+                    }}
                     className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       theme === "light" 
                         ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 text-cyan-600 dark:text-cyan-400" 
@@ -788,7 +840,10 @@ export default function Home() {
                     <Sun className="w-4 h-4" /> {t.settings.light}
                   </button>
                   <button 
-                    onClick={() => setTheme("dark")}
+                    onClick={() => {
+                      setTheme("dark");
+                      playSound("button-press");
+                    }}
                     className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       theme === "dark" 
                         ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 text-cyan-600 dark:text-cyan-400" 
@@ -798,7 +853,10 @@ export default function Home() {
                     <Moon className="w-4 h-4" /> {t.settings.dark}
                   </button>
                   <button 
-                    onClick={() => setTheme("system")}
+                    onClick={() => {
+                      setTheme("system");
+                      playSound("button-press");
+                    }}
                     className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                       theme === "system" 
                         ? "bg-white dark:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-600 text-cyan-600 dark:text-cyan-400" 
@@ -823,7 +881,10 @@ export default function Home() {
                   ].map((langOption) => (
                     <button
                       key={langOption.id}
-                      onClick={() => setLanguage(langOption.id as Language)}
+                      onClick={() => {
+                        setLanguage(langOption.id as Language);
+                        playSound("button-press");
+                      }}
                       className={`wii-btn py-3 px-4 rounded-xl text-sm font-semibold ${
                         language === langOption.id
                           ? "border-cyan-200 text-cyan-600 bg-cyan-50"
@@ -949,7 +1010,10 @@ export default function Home() {
 
             <button
               className="wii-btn p-5 rounded-full group"
-              onClick={() => setIsMuted(!isMuted)}
+              onClick={() => {
+                setIsMuted(!isMuted);
+                playSound("button-press", true);
+              }}
             >
               {isMuted ? (
                 <VolumeX className="w-6 h-6 text-gray-400 dark:text-gray-500 group-hover:text-cyan-500 dark:group-hover:text-cyan-400" />
@@ -999,7 +1063,14 @@ export default function Home() {
       <footer className="relative z-10 w-full py-6 text-center">
         <div
           className="inline-flex items-center gap-4 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] cursor-pointer hover:scale-105 hover:border-cyan-300 hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300 group"
-          onClick={() => setIsPlayingMusic(!isPlayingMusic)}
+          onClick={() => {
+            if (isPlayingMusic) {
+              playSound("close-delete");
+            } else {
+              playSound("button-press");
+            }
+            setIsPlayingMusic(!isPlayingMusic);
+          }}
         >
           <div className={`p-1.5 rounded-full ${isPlayingMusic ? 'bg-cyan-400 text-white' : 'bg-gray-200 dark:bg-[#404040] text-gray-400 dark:text-gray-300'} transition-colors duration-300`}>
              <Music className={`w-3 h-3 ${isPlayingMusic ? 'animate-pulse' : ''}`} />
