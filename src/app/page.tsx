@@ -65,7 +65,7 @@ const TRANSLATIONS = {
       reduceMotionDesc: "Disable background animations",
       credits: {
         dev: "Designed and Developed by Charles J. (CJ) Dyas",
-        sound: "Sound design by Terrel Sebastian",
+        sound: "Sound design by Terrell Sebastian",
       },
     },
     tasks: {
@@ -113,7 +113,7 @@ const TRANSLATIONS = {
       reduceMotionDesc: "背景アニメーションを無効化",
       credits: {
         dev: "デザイン・開発: Charles J. (CJ) Dyas",
-        sound: "サウンドデザイン: Terrel Sebastian",
+        sound: "サウンドデザイン: Terrell Sebastian",
       },
     },
     tasks: {
@@ -161,7 +161,7 @@ const TRANSLATIONS = {
       reduceMotionDesc: "Desactivar animaciones de fondo",
       credits: {
         dev: "Diseñado y Desarrollado por Charles J. (CJ) Dyas",
-        sound: "Diseño de sonido por Terrel Sebastian",
+        sound: "Diseño de sonido por Terrell Sebastian",
       },
     },
     tasks: {
@@ -209,7 +209,7 @@ const TRANSLATIONS = {
       reduceMotionDesc: "禁用背景动画",
       credits: {
         dev: "设计与开发: Charles J. (CJ) Dyas",
-        sound: "音效设计: Terrel Sebastian",
+        sound: "音效设计: Terrell Sebastian",
       },
     },
     tasks: {
@@ -421,9 +421,8 @@ export default function Home() {
           const source = ctx.createBufferSource();
           source.buffer = buffer;
           source.loop = true;
-          // Explicitly set loop points to the full buffer duration to prevent early cut-offs
           source.loopStart = 0;
-          source.loopEnd = buffer.duration;
+          source.loopEnd = buffer.duration - 0.05; // Trim end slightly to ensure seamless loop
           source.connect(gainNode);
           source.start(0);
           musicSourceRef.current = source;
@@ -749,10 +748,10 @@ export default function Home() {
         >
           {/* Spinning Rainbow Core */}
           <div className="orb-container relative w-[600px] h-[600px] rounded-full animate-[spin-slow_20s_linear_infinite]">
-            <div className="absolute inset-0 rounded-full rainbow-gradient opacity-40 blur-3xl"></div>
-            <div className="absolute top-0 left-1/4 w-1/2 h-1/2 bg-cyan-400/30 rounded-full blur-2xl mix-blend-multiply animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full bg-[#00D3F3] opacity-40 blur-3xl"></div>
+            <div className="absolute top-0 left-1/4 w-1/2 h-1/2 bg-[#00D3F3]/30 rounded-full blur-2xl mix-blend-multiply animate-pulse"></div>
             <div
-              className="absolute bottom-0 right-1/4 w-1/2 h-1/2 bg-purple-400/30 rounded-full blur-2xl mix-blend-multiply animate-pulse"
+              className="absolute bottom-0 right-1/4 w-1/2 h-1/2 bg-[#00D3F3]/30 rounded-full blur-2xl mix-blend-multiply animate-pulse"
               style={{ animationDelay: "1s" }}
             ></div>
           </div>
@@ -1058,7 +1057,7 @@ export default function Home() {
               } ${isFinished ? "text-green-500" : ""}`}
             >
               {formatTime(timeLeft)}
-            </h1>
+          </h1>
             <div className="mt-4 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
               <span className={statusClass}>{statusText}</span>
             </div>
@@ -1196,7 +1195,7 @@ export default function Home() {
                 exit={{ opacity: 0, scale: 0.8, width: 0 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-3 px-4 py-2 rounded-full wii-panel h-[50px]">
+                <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]">
                   <Volume2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                   <input
                     type="range"
