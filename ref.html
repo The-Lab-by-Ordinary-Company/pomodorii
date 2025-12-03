@@ -1,0 +1,362 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodorii Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        @font-face {
+            font-family: "Wii Sans";
+            src: url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.eot");
+            src: url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.eot?#iefix")format("embedded-opentype"),
+            url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.woff2")format("woff2"),
+            url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.woff")format("woff"),
+            url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.ttf")format("truetype"),
+            url("https://db.onlinewebfonts.com/t/005acc3dbc79c9ae0eaa0f4f9887473f.svg#Wii Sans")format("svg");
+        }
+
+        body {
+            font-family: 'Wii Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: #eef2f5;
+            background-image: radial-gradient(circle at 50% 50%, #ffffff 0%, #eef2f5 100%);
+        }
+
+        /* Animations */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes float-wii {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(56, 189, 248, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+
+        /* Rainbow Orb */
+        .orb-container {
+            filter: blur(40px);
+            opacity: 0.8;
+            transition: all 1s ease;
+        }
+
+        .rainbow-gradient {
+            background: conic-gradient(
+                from 0deg, 
+                #ff5f6d, 
+                #ffc371, 
+                #ffd700, 
+                #4ade80, 
+                #22d3ee, 
+                #818cf8, 
+                #c084fc, 
+                #ff5f6d
+            );
+        }
+
+        .orb-wrapper.active .orb-container {
+            filter: blur(30px);
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        /* Wii-style Glassy UI */
+        .wii-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.05),
+                0 10px 15px -3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 1);
+        }
+
+        .wii-btn {
+            background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
+            border: 1px solid #d1d5db;
+            box-shadow: 
+                0 2px 4px rgba(0,0,0,0.05),
+                inset 0 1px 0 rgba(255,255,255,1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #6b7280;
+        }
+
+        .wii-btn:hover {
+            border-color: #38bdf8; /* Wii Blue */
+            box-shadow: 
+                0 0 0 4px rgba(56, 189, 248, 0.15),
+                inset 0 1px 0 rgba(255,255,255,1);
+            transform: scale(1.05);
+            color: #0ea5e9;
+        }
+
+        .wii-btn:active {
+            transform: scale(0.95);
+        }
+
+        .wii-pill-active {
+            background: #38bdf8;
+            color: white;
+            border-color: #0ea5e9;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .timer-nums {
+            font-variant-numeric: tabular-nums;
+            font-family: 'Wii Sans', sans-serif;
+            color: #9ca3af; /* Passive gray */
+            text-shadow: 1px 1px 0px rgba(255,255,255,1);
+        }
+        
+        .timer-nums.active {
+            color: #4b5563; /* Active dark gray */
+        }
+
+        /* Hide scrollbar */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative overflow-hidden selection:bg-cyan-200 selection:text-cyan-900">
+
+    <!-- Rainbow Orb Background -->
+    <div id="orb-wrapper" class="fixed inset-0 flex items-center justify-center pointer-events-none z-0 orb-wrapper transition-all duration-700">
+        <!-- Spinning Rainbow Core -->
+        <div class="orb-container relative w-[600px] h-[600px] rounded-full animate-[spin-slow_20s_linear_infinite]">
+            <div class="absolute inset-0 rounded-full rainbow-gradient opacity-40 blur-3xl"></div>
+            <!-- Secondary blobs for organic feel -->
+            <div class="absolute top-0 left-1/4 w-1/2 h-1/2 bg-cyan-400/30 rounded-full blur-2xl mix-blend-multiply animate-pulse"></div>
+            <div class="absolute bottom-0 right-1/4 w-1/2 h-1/2 bg-purple-400/30 rounded-full blur-2xl mix-blend-multiply animate-pulse" style="animation-delay: 1s"></div>
+        </div>
+        
+        <!-- Center Focus Ring (Wii Pointer style) -->
+        <div id="main-orb" class="absolute w-80 h-80 rounded-full border border-white/40 shadow-[0_0_60px_rgba(255,255,255,0.8)] backdrop-blur-sm transition-all duration-700 opacity-50 scale-90"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="relative z-20 w-full px-8 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-2 group cursor-pointer">
+            <div class="w-4 h-4 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)] group-hover:scale-110 transition-transform"></div>
+            <span class="text-sm font-semibold tracking-wide text-gray-400 group-hover:text-gray-500 transition-colors">Pomodorii</span>
+        </div>
+        <button class="wii-btn p-2.5 rounded-full bg-white">
+            <i data-lucide="settings-2" class="w-5 h-5"></i>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 flex-grow flex flex-col items-center justify-center px-4 w-full">
+        
+        <!-- Timer Card -->
+        <div class="w-full max-w-sm flex flex-col items-center gap-10" style="animation: float-wii 6s ease-in-out infinite;">
+            
+            <!-- Mode Toggles (Pill Shape) -->
+            <div class="flex items-center gap-1 p-1.5 wii-panel rounded-full">
+                <button onclick="setMode('focus')" id="btn-focus" class="px-6 py-2 text-xs font-semibold rounded-full wii-pill-active transition-all">Focus</button>
+                <button onclick="setMode('short')" id="btn-short" class="px-6 py-2 text-xs font-semibold rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">Short Break</button>
+                <button onclick="setMode('long')" id="btn-long" class="px-6 py-2 text-xs font-semibold rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">Long Break</button>
+            </div>
+
+            <!-- Timer Display -->
+            <div class="relative group text-center">
+                <h1 id="timer-display" class="text-8xl md:text-9xl font-light tracking-tighter timer-nums transition-colors duration-500 select-none">
+                    25:00
+                </h1>
+                <!-- Status pill -->
+                <div class="mt-4 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <span id="status-text" class="px-4 py-1 rounded-full bg-white/50 border border-white text-[10px] uppercase tracking-widest text-cyan-600 font-bold shadow-sm backdrop-blur-sm">
+                        Ready
+                    </span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-8 mt-2">
+                <button id="reset-btn" class="wii-btn p-5 rounded-full bg-white group">
+                    <i data-lucide="rotate-ccw" class="w-6 h-6 transition-transform group-hover:-rotate-180 text-gray-400 group-hover:text-cyan-500"></i>
+                </button>
+
+                <button id="toggle-btn" class="relative flex items-center justify-center w-24 h-24 rounded-full bg-white hover:scale-105 active:scale-95 transition-all shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),inset_0_2px_0_rgba(255,255,255,1)] border border-gray-100 group">
+                    <div class="absolute inset-0 rounded-full border-4 border-gray-50 group-hover:border-cyan-100 transition-colors"></div>
+                    <i id="play-icon" data-lucide="play" class="w-10 h-10 ml-1 text-gray-300 fill-current group-hover:text-cyan-400 transition-colors"></i>
+                    <i id="pause-icon" data-lucide="pause" class="w-10 h-10 text-cyan-400 fill-current hidden"></i>
+                </button>
+
+                <button class="wii-btn p-5 rounded-full bg-white group">
+                    <i data-lucide="volume-2" class="w-6 h-6 text-gray-400 group-hover:text-cyan-500"></i>
+                </button>
+            </div>
+
+            <!-- Task Input Area -->
+            <div class="mt-8 w-full px-4">
+                <div class="relative group wii-panel rounded-2xl overflow-hidden">
+                    <input type="text" placeholder="Start a new task..." class="w-full bg-transparent py-4 px-6 text-sm text-gray-600 placeholder-gray-400 focus:outline-none focus:bg-white/50 transition-colors font-medium text-center">
+                    <div class="absolute bottom-0 left-0 h-0.5 bg-cyan-400 w-0 group-hover:w-full transition-all duration-500 ease-out mx-auto right-0"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="relative z-10 w-full py-6 text-center">
+        <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/40 border border-white/50 backdrop-blur-sm">
+            <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+            <p class="text-[10px] text-gray-400 font-semibold tracking-wider">ONLINE</p>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State
+        const MODES = {
+            focus: 25 * 60,
+            short: 5 * 60,
+            long: 15 * 60
+        };
+        
+        let currentMode = 'focus';
+        let timeLeft = MODES[currentMode];
+        let timerInterval = null;
+        let isRunning = false;
+
+        // Elements
+        const timerDisplay = document.getElementById('timer-display');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const statusText = document.getElementById('status-text');
+        const orbWrapper = document.getElementById('orb-wrapper');
+        const mainOrb = document.getElementById('main-orb');
+        const btns = {
+            focus: document.getElementById('btn-focus'),
+            short: document.getElementById('btn-short'),
+            long: document.getElementById('btn-long')
+        };
+
+        // Format Time (MM:SS)
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(timeLeft);
+            document.title = `${formatTime(timeLeft)} - Pomodorii`;
+        }
+
+        // Timer Logic
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            
+            // UI Updates
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+            statusText.textContent = "Focusing...";
+            statusText.className = "px-4 py-1 rounded-full bg-cyan-50 border border-cyan-200 text-[10px] uppercase tracking-widest text-cyan-600 font-bold shadow-sm";
+            
+            // Activate visuals
+            timerDisplay.classList.add('active');
+            orbWrapper.classList.add('active');
+            mainOrb.style.transform = 'scale(1.2)';
+            mainOrb.style.opacity = '1';
+            toggleBtn.classList.add('ring-4', 'ring-cyan-100');
+
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                } else {
+                    completeTimer();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (!isRunning) return;
+            isRunning = false;
+            clearInterval(timerInterval);
+            
+            // UI Updates
+            playIcon.classList.remove('hidden');
+            pauseIcon.classList.add('hidden');
+            statusText.textContent = "Paused";
+            statusText.className = "px-4 py-1 rounded-full bg-white/50 border border-white text-[10px] uppercase tracking-widest text-gray-400 font-bold shadow-sm";
+            
+            // Deactivate visuals
+            timerDisplay.classList.remove('active');
+            orbWrapper.classList.remove('active');
+            mainOrb.style.transform = 'scale(0.9)';
+            mainOrb.style.opacity = '0.5';
+            toggleBtn.classList.remove('ring-4', 'ring-cyan-100');
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timeLeft = MODES[currentMode];
+            updateDisplay();
+            statusText.textContent = "Ready";
+        }
+
+        function completeTimer() {
+            pauseTimer();
+            statusText.textContent = "Finished!";
+            statusText.className = "px-4 py-1 rounded-full bg-green-50 border border-green-200 text-[10px] uppercase tracking-widest text-green-600 font-bold shadow-sm";
+            timerDisplay.classList.add('text-green-500');
+            setTimeout(() => timerDisplay.classList.remove('text-green-500'), 2000);
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Update Tab Styles
+            Object.keys(btns).forEach(key => {
+                const btn = btns[key];
+                if (key === mode) {
+                    btn.className = "px-6 py-2 text-xs font-semibold rounded-full wii-pill-active transition-all";
+                } else {
+                    btn.className = "px-6 py-2 text-xs font-semibold rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all";
+                }
+            });
+
+            resetTimer();
+        }
+
+        // Event Listeners
+        toggleBtn.addEventListener('click', () => {
+            if (isRunning) pauseTimer();
+            else startTimer();
+        });
+
+        resetBtn.addEventListener('click', resetTimer);
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault(); 
+                if (isRunning) pauseTimer();
+                else startTimer();
+            }
+        });
+
+        // Initial render
+        updateDisplay();
+    </script>
+
+</body></html>
