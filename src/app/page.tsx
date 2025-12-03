@@ -74,7 +74,7 @@ const TRANSLATIONS = {
     music: {
       nowPlaying: "Now Playing",
       clickToPlay: "Click to Play",
-      track: "Pomodorii Radio - Chill Lo-Fi Beats",
+      track: "Pomodorii Main Theme",
     },
   },
   ja: {
@@ -320,6 +320,7 @@ export default function Home() {
   const [isFinished, setIsFinished] = useState(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(50);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
   const [language, setLanguage] = useState<Language>("en");
@@ -340,6 +341,13 @@ export default function Home() {
   // Preload sounds
   const sounds = useRef<{ [key: string]: HTMLAudioElement } | null>(null);
 
+  // Music Web Audio API Refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const musicSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferRef = useRef<AudioBuffer | null>(null);
+  const [isAudioContextReady, setIsAudioContextReady] = useState(false);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       sounds.current = {
@@ -352,7 +360,38 @@ export default function Home() {
         audio.preload = 'auto';
         audio.volume = 0.5;
       });
+
+      // Init Web Audio API for Music
+      const initAudio = async () => {
+        try {
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const ctx = new AudioContextClass();
+          audioContextRef.current = ctx;
+  
+          const gainNode = ctx.createGain();
+          gainNode.connect(ctx.destination);
+          gainNodeRef.current = gainNode;
+  
+          // Fetch and decode with cache busting to ensure fresh file
+          const response = await fetch(`/sound-fx/main-theme.wav?v=${Date.now()}`);
+          const arrayBuffer = await response.arrayBuffer();
+          const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
+          audioBufferRef.current = decodedBuffer;
+          
+          setIsAudioContextReady(true);
+        } catch (e) {
+          console.error("Failed to init music audio:", e);
+        }
+      };
+  
+      initAudio();
     }
+
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
   }, []);
 
   const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm', force = false) => {
@@ -365,6 +404,42 @@ export default function Home() {
       audio.play().catch(e => console.log("Audio play prevented:", e));
     }
   }, [isMuted]);
+
+  // Music Playback Effect
+  useEffect(() => {
+    if (!isAudioContextReady || !audioContextRef.current || !audioBufferRef.current || !gainNodeRef.current) return;
+    
+    const ctx = audioContextRef.current;
+    
+    if (isPlayingMusic) {
+      ctx.resume().then(() => {
+        if (!musicSourceRef.current) {
+          const source = ctx.createBufferSource();
+          source.buffer = audioBufferRef.current;
+          source.loop = true;
+          // Explicitly set loop points to the full buffer duration to prevent early cut-offs
+          source.loopStart = 0;
+          source.loopEnd = audioBufferRef.current.duration;
+          source.connect(gainNodeRef.current!);
+          source.start(0);
+          musicSourceRef.current = source;
+        }
+      });
+    } else {
+      if (ctx.state === 'running') {
+        ctx.suspend();
+      }
+    }
+  }, [isPlayingMusic, isAudioContextReady]);
+
+  // Music Volume Effect
+  useEffect(() => {
+    if (!gainNodeRef.current || !audioContextRef.current) return;
+    const volume = isMuted ? 0 : musicVolume / 100;
+    const currentTime = audioContextRef.current.currentTime;
+    gainNodeRef.current.gain.cancelScheduledValues(currentTime);
+    gainNodeRef.current.gain.setTargetAtTime(volume, currentTime, 0.1);
+  }, [musicVolume, isMuted, isAudioContextReady]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -1060,52 +1135,77 @@ export default function Home() {
       </main>
 
       {/* Wii-Style Music Player */}
-      <footer className="relative z-10 w-full py-6 text-center">
-        <div
-          className="inline-flex items-center gap-4 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] cursor-pointer hover:scale-105 hover:border-cyan-300 hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300 group"
-          onClick={() => {
-            if (isPlayingMusic) {
-              playSound("close-delete");
-            } else {
-              playSound("button-press");
-            }
-            setIsPlayingMusic(!isPlayingMusic);
-          }}
-        >
-          <div className={`p-1.5 rounded-full ${isPlayingMusic ? 'bg-cyan-400 text-white' : 'bg-gray-200 dark:bg-[#404040] text-gray-400 dark:text-gray-300'} transition-colors duration-300`}>
-             <Music className={`w-3 h-3 ${isPlayingMusic ? 'animate-pulse' : ''}`} />
-          </div>
-          
-          <div className="flex flex-col items-start justify-center h-8 overflow-hidden w-32">
-             <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider leading-none mb-1">{t.music.nowPlaying}</div>
-             <div className="w-full overflow-hidden relative h-4">
-              {isPlayingMusic ? (
-                <div
-                  className="whitespace-nowrap absolute text-xs font-medium text-gray-600 dark:text-gray-300 animate-[scroll-text_6s_linear_infinite]"
-                  style={{ animationDelay: "-2s" }}
-                >
-                  {t.music.track}
-                </div>
-              ) : (
-                 <div className="absolute inset-0 flex items-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                   {t.music.clickToPlay}
-                 </div>
-               )}
-             </div>
+      <footer className="relative z-10 w-full py-6 flex flex-col items-center justify-center gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          <div
+            className="inline-flex items-center gap-4 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] cursor-pointer hover:scale-105 hover:border-cyan-300 hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300 group"
+            onClick={() => {
+              if (isPlayingMusic) {
+                playSound("close-delete");
+              } else {
+                playSound("button-press");
+              }
+              setIsPlayingMusic(!isPlayingMusic);
+            }}
+          >
+            <div className={`p-1.5 rounded-full ${isPlayingMusic ? 'bg-cyan-400 text-white' : 'bg-gray-200 dark:bg-[#404040] text-gray-400 dark:text-gray-300'} transition-colors duration-300`}>
+               <Music className={`w-3 h-3 ${isPlayingMusic ? 'animate-pulse' : ''}`} />
+            </div>
+            
+            <div className="flex flex-col items-start justify-center h-8 overflow-hidden w-32">
+               <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider leading-none mb-1">{t.music.nowPlaying}</div>
+               <div className="w-full overflow-hidden relative h-4">
+                {isPlayingMusic ? (
+                  <div
+                    className="whitespace-nowrap absolute text-xs font-medium text-gray-600 dark:text-gray-300 animate-[scroll-text_6s_linear_infinite]"
+                    style={{ animationDelay: "-2s" }}
+                  >
+                    {t.music.track}
+                  </div>
+                ) : (
+                   <div className="absolute inset-0 flex items-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">
+                     {t.music.clickToPlay}
+                   </div>
+                 )}
+               </div>
+            </div>
+
+            <div className="flex gap-0.5 items-end h-4 mb-1">
+               {[...Array(4)].map((_, i) => (
+                 <div 
+                   key={i} 
+                   className={`w-1 bg-cyan-400 rounded-t-sm transition-all duration-300 ${isPlayingMusic && !settings.reduceMotion ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-1 bg-gray-300 dark:bg-gray-700'}`}
+                   style={{ 
+                     height: isPlayingMusic && !settings.reduceMotion ? `${Math.random() * 12 + 4}px` : '4px',
+                     animationDelay: `${i * 0.1}s` 
+                   }}
+                 />
+               ))}
+            </div>
           </div>
 
-          <div className="flex gap-0.5 items-end h-4 mb-1">
-             {[...Array(4)].map((_, i) => (
-               <div 
-                 key={i} 
-                 className={`w-1 bg-cyan-400 rounded-t-sm transition-all duration-300 ${isPlayingMusic && !settings.reduceMotion ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-1 bg-gray-300 dark:bg-gray-700'}`}
-                 style={{ 
-                   height: isPlayingMusic && !settings.reduceMotion ? `${Math.random() * 12 + 4}px` : '4px',
-                   animationDelay: `${i * 0.1}s` 
-                 }}
-               />
-             ))}
-          </div>
+          <AnimatePresence>
+            {isPlayingMusic && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                animate={{ opacity: 1, scale: 1, width: "auto" }}
+                exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-3 px-4 py-2 rounded-full wii-panel h-[50px]">
+                  <Volume2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={musicVolume}
+                    onChange={(e) => setMusicVolume(Number(e.target.value))}
+                    className="w-24 accent-cyan-400 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </footer>
     </MotionConfig>
