@@ -41,6 +41,7 @@ export const metadata: Metadata = {
 };
 
 import { Providers } from "./providers";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RootLayout({
   children,
@@ -53,6 +54,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen flex flex-col relative selection:bg-cyan-200 selection:text-cyan-900 dark:selection:bg-cyan-800 dark:selection:text-cyan-100`}
       >
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
