@@ -421,8 +421,6 @@ export default function Home() {
           const source = ctx.createBufferSource();
           source.buffer = buffer;
           source.loop = true;
-          source.loopStart = 0;
-          source.loopEnd = buffer.duration - 0.05; // Trim end slightly to ensure seamless loop
           source.connect(gainNode);
           source.start(0);
           musicSourceRef.current = source;
