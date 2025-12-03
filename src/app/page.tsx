@@ -356,6 +356,7 @@ export default function Home() {
         'button-press': new Audio('/sound-fx/button-press.wav'),
         'close-delete': new Audio('/sound-fx/close-delete.wav'),
         'alarm': new Audio('/sound-fx/alarm.wav'),
+        'shift': new Audio('/sound-fx/shift.wav'),
       };
       // Preload audio files
       Object.values(sounds.current).forEach(audio => {
@@ -421,7 +422,7 @@ export default function Home() {
     };
   }, []);
 
-  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm', force = false) => {
+  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift', force = false) => {
     if (!sounds.current) return;
     if (!force && isMuted) return;
     
@@ -851,6 +852,7 @@ export default function Home() {
                   setIsSettingsOpen(false);
                   playSound("close-delete");
                 }}
+                onMouseEnter={() => playSound("shift")}
                 className="wii-btn p-2 rounded-full hover:bg-red-50 hover:border-red-200 hover:text-red-400 group"
               >
                 <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
