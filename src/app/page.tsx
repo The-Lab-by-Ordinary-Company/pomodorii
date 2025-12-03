@@ -407,20 +407,24 @@ export default function Home() {
 
   // Music Playback Effect
   useEffect(() => {
-    if (!isAudioContextReady || !audioContextRef.current || !audioBufferRef.current || !gainNodeRef.current) return;
-    
+    if (!isAudioContextReady) return;
+
     const ctx = audioContextRef.current;
+    const buffer = audioBufferRef.current;
+    const gainNode = gainNodeRef.current;
+
+    if (!ctx || !buffer || !gainNode) return;
     
     if (isPlayingMusic) {
       ctx.resume().then(() => {
         if (!musicSourceRef.current) {
           const source = ctx.createBufferSource();
-          source.buffer = audioBufferRef.current;
+          source.buffer = buffer;
           source.loop = true;
           // Explicitly set loop points to the full buffer duration to prevent early cut-offs
           source.loopStart = 0;
-          source.loopEnd = audioBufferRef.current.duration;
-          source.connect(gainNodeRef.current!);
+          source.loopEnd = buffer.duration;
+          source.connect(gainNode);
           source.start(0);
           musicSourceRef.current = source;
         }
