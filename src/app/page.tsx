@@ -247,10 +247,14 @@ const TaskItem = ({
   task,
   toggleTask,
   deleteTask,
+  onPickup,
+  onDrop,
 }: {
   task: Task;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  onPickup: () => void;
+  onDrop: () => void;
 }) => {
   const controls = useDragControls();
 
@@ -260,6 +264,8 @@ const TaskItem = ({
       id={task.id}
       dragListener={false}
       dragControls={controls}
+      onDragStart={onPickup}
+      onDragEnd={onDrop}
       initial={{ opacity: 0, y: -10, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
@@ -320,7 +326,7 @@ export default function Home() {
   const [isFinished, setIsFinished] = useState(false);
   const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [musicVolume, setMusicVolume] = useState(50);
+  const [musicVolume, setMusicVolume] = useState(15);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
   const [language, setLanguage] = useState<Language>("en");
@@ -361,6 +367,8 @@ export default function Home() {
         'shift': new Audio('/sound-fx/shift.wav'),
         'start-chime': new Audio('/sound-fx/start-chime.wav'),
         'toggle': new Audio('/sound-fx/toggle.wav'),
+        'task-pickup': new Audio('/sound-fx/task-pickup.wav'),
+        'task-drop': new Audio('/sound-fx/task-drop.wav'),
       };
       // Preload audio files
       Object.values(sounds.current).forEach(audio => {
@@ -427,7 +435,7 @@ export default function Home() {
     };
   }, []);
 
-  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift' | 'start-chime' | 'toggle', force = false, pitch = 1) => {
+  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift' | 'start-chime' | 'toggle' | 'task-pickup' | 'task-drop', force = false, pitch = 1) => {
     if (!sounds.current) return;
     if (!force && isMuted) return;
     
@@ -1193,6 +1201,8 @@ export default function Home() {
                       task={task}
                       toggleTask={toggleTask}
                       deleteTask={deleteTask}
+                      onPickup={() => playSound("task-pickup")}
+                      onDrop={() => playSound("task-drop")}
                     />
                   ))}
                 </AnimatePresence>
