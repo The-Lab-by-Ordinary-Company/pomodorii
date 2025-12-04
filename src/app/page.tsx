@@ -65,7 +65,6 @@ const TRANSLATIONS = {
       reduceMotionDesc: "Disable background animations",
       credits: {
         dev: "Designed and Developed by Charles J. (CJ) Dyas",
-        sound: "Sound design by Terrell Sebastian",
       },
     },
     tasks: {
@@ -113,7 +112,6 @@ const TRANSLATIONS = {
       reduceMotionDesc: "背景アニメーションを無効化",
       credits: {
         dev: "デザイン・開発: Charles J. (CJ) Dyas",
-        sound: "サウンドデザイン: Terrell Sebastian",
       },
     },
     tasks: {
@@ -161,7 +159,6 @@ const TRANSLATIONS = {
       reduceMotionDesc: "Desactivar animaciones de fondo",
       credits: {
         dev: "Diseñado y Desarrollado por Charles J. (CJ) Dyas",
-        sound: "Diseño de sonido por Terrell Sebastian",
       },
     },
     tasks: {
@@ -209,7 +206,6 @@ const TRANSLATIONS = {
       reduceMotionDesc: "禁用背景动画",
       credits: {
         dev: "设计与开发: Charles J. (CJ) Dyas",
-        sound: "音效设计: Terrell Sebastian",
       },
     },
     tasks: {
@@ -1081,9 +1077,6 @@ export default function Home() {
               <div className="pt-6 pb-2 text-center space-y-1">
                 <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
                   {t.settings.credits.dev}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                  {t.settings.credits.sound}
                 </p>
               </div>
 
