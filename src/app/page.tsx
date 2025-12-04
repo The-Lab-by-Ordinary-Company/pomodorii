@@ -349,6 +349,8 @@ export default function Home() {
   const loopStartRef = useRef<number>(0);
   const loopEndRef = useRef<number>(0);
   const [isAudioContextReady, setIsAudioContextReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [areSoundsReady, setAreSoundsReady] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -357,12 +359,15 @@ export default function Home() {
         'close-delete': new Audio('/sound-fx/close-delete.wav'),
         'alarm': new Audio('/sound-fx/alarm.wav'),
         'shift': new Audio('/sound-fx/shift.wav'),
+        'start-chime': new Audio('/sound-fx/start-chime.wav'),
+        'toggle': new Audio('/sound-fx/toggle.wav'),
       };
       // Preload audio files
       Object.values(sounds.current).forEach(audio => {
         audio.preload = 'auto';
         audio.volume = 0.5;
       });
+      setAreSoundsReady(true);
 
       // Init Web Audio API for Music
       const initAudio = async () => {
@@ -422,16 +427,20 @@ export default function Home() {
     };
   }, []);
 
-  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift', force = false) => {
+  const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift' | 'start-chime' | 'toggle', force = false, pitch = 1) => {
     if (!sounds.current) return;
     if (!force && isMuted) return;
     
     const audio = sounds.current[sound];
     if (audio) {
       audio.currentTime = 0; // Reset to start for instant replay
+      audio.playbackRate = pitch;
       audio.play().catch(e => console.log("Audio play prevented:", e));
     }
   }, [isMuted]);
+
+  // Play start chime when sounds are ready and loading
+  // Replaced with declarative <audio> tag for better autoplay handling
 
   // Music Playback Effect
   useEffect(() => {
@@ -662,7 +671,8 @@ export default function Home() {
   };
 
   const switchMode = (mode: Mode) => {
-    playSound("button-press");
+    // Random slight pitch variation for bouncy feel (0.9 - 1.1)
+    playSound("button-press", false, 0.9 + Math.random() * 0.2);
     setCurrentMode(mode);
     setIsRunning(false);
     const minutes =
@@ -728,7 +738,7 @@ export default function Home() {
         <div
           onClick={() => {
             onChange(!checked);
-            playSound("button-press");
+            playSound("toggle");
           }}
           className={`w-14 h-8 rounded-full p-1 cursor-pointer transition-colors duration-300 ease-in-out ${
           checked ? "bg-cyan-400 dark:bg-cyan-600" : "bg-gray-200 dark:bg-gray-700 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)]"
@@ -766,6 +776,46 @@ export default function Home() {
           }
         `}</style>
       )}
+
+      {/* Loading Splash Screen */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-white dark:bg-black"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+              onAnimationComplete={() => {
+                setTimeout(() => setIsLoading(false), 1000);
+              }}
+              className="flex items-center gap-4"
+            >
+              <audio
+                src="/sound-fx/start-chime.wav"
+                autoPlay
+                onEnded={() => {
+                   // Optional: could trigger exit here ensuring sound plays fully
+                }}
+                ref={(el) => {
+                  if (el) el.volume = 0.25;
+                }}
+              />
+              <div className="relative w-16 h-16 rounded-2xl overflow-hidden">
+                 <Image src="/pomodorii-icon.png" alt="Pomodorii Icon" fill className="object-cover" priority />
+              </div>
+              <span className="text-4xl font-bold tracking-tight text-[#9AA1AF] dark:text-gray-100">
+                {t.appTitle}
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Rainbow Orb Background - Only visible if NOT reduced motion */}
       {!settings.reduceMotion && (
