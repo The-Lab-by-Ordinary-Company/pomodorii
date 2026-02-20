@@ -14,33 +14,33 @@ export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const contentOpacity = interpolate(frame, [0, 30], [0, 1], {
+  const contentOpacity = interpolate(frame, [0, 15], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   const iconScale = spring({
-    frame: frame - 10,
+    frame: frame - 5,
     fps,
     config: { damping: 12, stiffness: 180 },
   });
 
-  const taglineOpacity = interpolate(frame, [40, 65], [0, 1], {
+  const taglineOpacity = interpolate(frame, [20, 40], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const taglineY = interpolate(frame, [40, 65], [15, 0], {
+  const taglineY = interpolate(frame, [20, 40], [15, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const urlOpacity = interpolate(frame, [60, 80], [0, 1], {
+  const urlOpacity = interpolate(frame, [35, 50], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const fadeOut = interpolate(frame, [120, 150], [1, 0], {
+  const fadeOut = interpolate(frame, [70, 90], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -89,7 +89,7 @@ export const OutroScene: React.FC = () => {
             fontWeight: 700,
             letterSpacing: -1,
             color: "#9AA1AF",
-            fontFamily: "system-ui, sans-serif",
+            fontFamily: "'Wii Sans', system-ui, sans-serif",
           }}
         >
           Pomodorii
@@ -102,7 +102,7 @@ export const OutroScene: React.FC = () => {
           fontWeight: 500,
           color: "#d1d5db",
           letterSpacing: 2,
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: "'Wii Sans', system-ui, sans-serif",
           opacity: taglineOpacity,
           transform: `translateY(${taglineY}px)`,
         }}
@@ -118,7 +118,7 @@ export const OutroScene: React.FC = () => {
           fontWeight: 600,
           color: "#d1d5db",
           letterSpacing: 3,
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: "'Wii Sans', system-ui, sans-serif",
           opacity: urlOpacity,
         }}
       >

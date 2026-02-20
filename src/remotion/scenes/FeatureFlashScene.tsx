@@ -10,34 +10,35 @@ import {
 import { Audio } from "@remotion/media";
 import { WiiPanel } from "../components/WiiPanel";
 
+const FONT = "'Wii Sans', system-ui, sans-serif";
 const LANGUAGES = ["English", "日本語", "Español", "中文"];
 
 export const FeatureFlashScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // 3 sub-sections: theme (0-59), language (60-119), drag (120-179)
-  const section = frame < 60 ? 0 : frame < 120 ? 1 : 2;
+  // 3 sub-sections: theme (0-39), language (40-79), drag (80-119)
+  const section = frame < 40 ? 0 : frame < 80 ? 1 : 2;
 
   // Section transitions
   const sectionOpacity = (start: number) =>
-    interpolate(frame, [start, start + 10, start + 50, start + 60], [0, 1, 1, 0], {
+    interpolate(frame, [start, start + 8, start + 32, start + 40], [0, 1, 1, 0], {
       extrapolateLeft: "clamp",
       extrapolateRight: "clamp",
     });
 
   // Theme toggle
-  const isDark = frame > 25 && frame < 60;
+  const isDark = frame > 18 && frame < 40;
 
   // Language cycling
   const langIndex = Math.min(
-    Math.floor((frame - 60) / 15),
+    Math.floor((frame - 40) / 10),
     LANGUAGES.length - 1
   );
 
   // Drag animation
-  const dragY = frame >= 120
-    ? interpolate(frame - 120, [0, 15, 30, 45], [0, -50, -50, 0], {
+  const dragY = frame >= 80
+    ? interpolate(frame - 80, [0, 10, 20, 30], [0, -50, -50, 0], {
         extrapolateLeft: "clamp",
         extrapolateRight: "clamp",
       })
@@ -53,13 +54,13 @@ export const FeatureFlashScene: React.FC = () => {
     >
       {/* Sounds */}
       <Audio src={staticFile("sound-fx/toggle.wav")} volume={0.4} />
-      {frame >= 60 && frame < 62 && (
+      {frame >= 40 && frame < 42 && (
         <Audio src={staticFile("sound-fx/shift.wav")} volume={0.3} />
       )}
-      {frame >= 120 && frame < 122 && (
+      {frame >= 80 && frame < 82 && (
         <Audio src={staticFile("sound-fx/task-pickup.wav")} volume={0.4} />
       )}
-      {frame >= 150 && frame < 152 && (
+      {frame >= 100 && frame < 102 && (
         <Audio src={staticFile("sound-fx/task-drop.wav")} volume={0.4} />
       )}
 
@@ -85,7 +86,7 @@ export const FeatureFlashScene: React.FC = () => {
               letterSpacing: 4,
               textTransform: "uppercase" as const,
               color: isDark ? "#6b7280" : "#9ca3af",
-              fontFamily: "system-ui, sans-serif",
+              fontFamily: FONT,
             }}
           >
             Theme
@@ -99,7 +100,7 @@ export const FeatureFlashScene: React.FC = () => {
                   borderRadius: 12,
                   fontSize: 15,
                   fontWeight: 600,
-                  fontFamily: "system-ui, sans-serif",
+                  fontFamily: FONT,
                   color:
                     (i === 0 && !isDark) || (i === 1 && isDark)
                       ? "#0891b2"
@@ -132,7 +133,7 @@ export const FeatureFlashScene: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: 40,
-            opacity: sectionOpacity(60),
+            opacity: sectionOpacity(40),
           }}
         >
           <div
@@ -142,7 +143,7 @@ export const FeatureFlashScene: React.FC = () => {
               letterSpacing: 4,
               textTransform: "uppercase" as const,
               color: "#9ca3af",
-              fontFamily: "system-ui, sans-serif",
+              fontFamily: FONT,
             }}
           >
             Language
@@ -151,7 +152,7 @@ export const FeatureFlashScene: React.FC = () => {
             {LANGUAGES.map((lang, i) => {
               const isActive = i === Math.max(0, langIndex);
               const langSpring = spring({
-                frame: frame - 60 - i * 15,
+                frame: frame - 40 - i * 10,
                 fps,
                 config: { damping: 12, stiffness: 200 },
               });
@@ -163,7 +164,7 @@ export const FeatureFlashScene: React.FC = () => {
                     textAlign: "center",
                     fontSize: 16,
                     fontWeight: 600,
-                    fontFamily: "system-ui, sans-serif",
+                    fontFamily: FONT,
                     color: isActive ? "#0891b2" : "#9ca3af",
                     border: isActive ? "1px solid #67e8f9" : undefined,
                     background: isActive ? "rgba(207, 250, 254, 0.5)" : undefined,
@@ -189,7 +190,7 @@ export const FeatureFlashScene: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             gap: 40,
-            opacity: sectionOpacity(120),
+            opacity: sectionOpacity(80),
           }}
         >
           <div
@@ -199,7 +200,7 @@ export const FeatureFlashScene: React.FC = () => {
               letterSpacing: 4,
               textTransform: "uppercase" as const,
               color: "#9ca3af",
-              fontFamily: "system-ui, sans-serif",
+              fontFamily: FONT,
             }}
           >
             Drag & Drop
@@ -215,7 +216,7 @@ export const FeatureFlashScene: React.FC = () => {
                   gap: 14,
                   transform: i === 0 ? `translateY(${dragY}px)` : undefined,
                   boxShadow:
-                    i === 0 && frame >= 125 && frame <= 145
+                    i === 0 && frame >= 85 && frame <= 105
                       ? "0 10px 20px rgba(0,0,0,0.1)"
                       : undefined,
                   zIndex: i === 0 ? 10 : 1,
@@ -256,7 +257,7 @@ export const FeatureFlashScene: React.FC = () => {
                     fontSize: 16,
                     fontWeight: 500,
                     color: "#4b5563",
-                    fontFamily: "system-ui, sans-serif",
+                    fontFamily: FONT,
                   }}
                 >
                   {task}

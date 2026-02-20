@@ -18,17 +18,17 @@ export const SplashScene: React.FC = () => {
     frame,
     fps,
     config: { damping: 12, stiffness: 200, mass: 0.8 },
-    delay: 15,
+    delay: 5,
   });
 
   const iconY = interpolate(iconScale, [0, 1], [40, 0]);
 
-  const textOpacity = interpolate(frame, [30, 55], [0, 1], {
+  const textOpacity = interpolate(frame, [15, 35], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const textX = interpolate(frame, [30, 55], [30, 0], {
+  const textX = interpolate(frame, [15, 35], [30, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -73,7 +73,7 @@ export const SplashScene: React.FC = () => {
             color: "#9AA1AF",
             opacity: textOpacity,
             transform: `translateX(${textX}px)`,
-            fontFamily: "system-ui, sans-serif",
+            fontFamily: "'Wii Sans', system-ui, sans-serif",
           }}
         >
           Pomodorii
