@@ -6,6 +6,7 @@ import { PlayScene } from "./scenes/PlayScene";
 import { MusicScene } from "./scenes/MusicScene";
 import { FinishScene } from "./scenes/FinishScene";
 import { FeatureFlashScene } from "./scenes/FeatureFlashScene";
+import { OutroScene } from "./scenes/OutroScene";
 
 export const PomodoReel: React.FC = () => {
   return (
@@ -30,6 +31,9 @@ export const PomodoReel: React.FC = () => {
       </Sequence>
       <Sequence from={570} durationInFrames={180} name="Feature Flash">
         <FeatureFlashScene />
+      </Sequence>
+      <Sequence from={750} durationInFrames={150} name="Logo Outro">
+        <OutroScene />
       </Sequence>
     </AbsoluteFill>
   );

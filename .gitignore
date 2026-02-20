@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# remotion render output
+out/
+
 # editor config
 .claude/
 
