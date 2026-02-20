@@ -2,6 +2,8 @@ import { AbsoluteFill, Sequence } from "remotion";
 import { SplashScene } from "./scenes/SplashScene";
 import { TimerScene } from "./scenes/TimerScene";
 import { TasksScene } from "./scenes/TasksScene";
+import { PlayScene } from "./scenes/PlayScene";
+import { MusicScene } from "./scenes/MusicScene";
 
 export const PomodoReel: React.FC = () => {
   return (
@@ -14,6 +16,12 @@ export const PomodoReel: React.FC = () => {
       </Sequence>
       <Sequence from={180} durationInFrames={90} name="Tasks Fly In">
         <TasksScene />
+      </Sequence>
+      <Sequence from={270} durationInFrames={120} name="Press Play">
+        <PlayScene />
+      </Sequence>
+      <Sequence from={390} durationInFrames={90} name="Music Vibes">
+        <MusicScene />
       </Sequence>
     </AbsoluteFill>
   );
