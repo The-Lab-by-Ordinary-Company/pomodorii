@@ -4,6 +4,8 @@ import { TimerScene } from "./scenes/TimerScene";
 import { TasksScene } from "./scenes/TasksScene";
 import { PlayScene } from "./scenes/PlayScene";
 import { MusicScene } from "./scenes/MusicScene";
+import { FinishScene } from "./scenes/FinishScene";
+import { FeatureFlashScene } from "./scenes/FeatureFlashScene";
 
 export const PomodoReel: React.FC = () => {
   return (
@@ -22,6 +24,12 @@ export const PomodoReel: React.FC = () => {
       </Sequence>
       <Sequence from={390} durationInFrames={90} name="Music Vibes">
         <MusicScene />
+      </Sequence>
+      <Sequence from={480} durationInFrames={90} name="Timer Done">
+        <FinishScene />
+      </Sequence>
+      <Sequence from={570} durationInFrames={180} name="Feature Flash">
+        <FeatureFlashScene />
       </Sequence>
     </AbsoluteFill>
   );
