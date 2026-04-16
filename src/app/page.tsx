@@ -24,6 +24,7 @@ import { useTheme } from "next-themes";
 import { motion, AnimatePresence, Reorder, useDragControls, MotionConfig } from "framer-motion";
 import Image from "next/image";
 import { ChannelCard } from "@/components/radio/ChannelCard";
+import { DusqkGallery } from "@/components/radio/DusqkGallery";
 import { LocalChannelPanel } from "@/components/radio/LocalChannelPanel";
 import { RadioDrawer } from "@/components/radio/RadioDrawer";
 import { RadioPill } from "@/components/radio/RadioPill";
@@ -72,6 +73,8 @@ const TRANSLATIONS = {
       credits: {
         dev: "Designed and Developed by Charles J. (CJ) Dyas",
         version: `v${packageJson.version}`,
+        poweredBy: "Powered by The Lab",
+        poweredByAria: "Powered by The Lab — Ordinary Company",
       },
     },
     tasks: {
@@ -80,6 +83,8 @@ const TRANSLATIONS = {
     radio: {
       title: "Pomodorii Radio",
       subtitle: "Choose a channel",
+      home: "Home",
+      nowPlaying: "Now Playing",
       states: {
         idle: "Idle",
         ready: "Ready",
@@ -137,6 +142,8 @@ const TRANSLATIONS = {
       credits: {
         dev: "デザイン・開発: Charles J. (CJ) Dyas",
         version: `v${packageJson.version}`,
+        poweredBy: "Powered by The Lab",
+        poweredByAria: "Powered by The Lab — Ordinary Company",
       },
     },
     tasks: {
@@ -145,6 +152,8 @@ const TRANSLATIONS = {
     radio: {
       title: "Pomodorii Radio",
       subtitle: "チャンネルを選択",
+      home: "ホーム",
+      nowPlaying: "再生中",
       states: {
         idle: "待機中",
         ready: "準備完了",
@@ -202,6 +211,8 @@ const TRANSLATIONS = {
       credits: {
         dev: "Diseñado y Desarrollado por Charles J. (CJ) Dyas",
         version: `v${packageJson.version}`,
+        poweredBy: "Powered by The Lab",
+        poweredByAria: "Powered by The Lab — Ordinary Company",
       },
     },
     tasks: {
@@ -210,6 +221,8 @@ const TRANSLATIONS = {
     radio: {
       title: "Pomodorii Radio",
       subtitle: "Elige un canal",
+      home: "Inicio",
+      nowPlaying: "Reproduciendo",
       states: {
         idle: "Inactivo",
         ready: "Listo",
@@ -267,6 +280,8 @@ const TRANSLATIONS = {
       credits: {
         dev: "设计与开发: Charles J. (CJ) Dyas",
         version: `v${packageJson.version}`,
+        poweredBy: "Powered by The Lab",
+        poweredByAria: "Powered by The Lab — Ordinary Company",
       },
     },
     tasks: {
@@ -275,6 +290,8 @@ const TRANSLATIONS = {
     radio: {
       title: "Pomodorii Radio",
       subtitle: "选择一个频道",
+      home: "主页",
+      nowPlaying: "正在播放",
       states: {
         idle: "空闲",
         ready: "就绪",
@@ -502,7 +519,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const activeChannel = getRadioChannel(activeChannelId) ?? RADIO_CHANNELS[0];
   const localChannel = getRadioChannel("pomodorii-main-theme") as Extract<(typeof RADIO_CHANNELS)[number], { provider: "local" }>;
-  const youtubeChannel = getRadioChannel("sanctuary-os") as Extract<(typeof RADIO_CHANNELS)[number], { provider: "youtube" }>;
   const activePlaybackState: RadioPlaybackState =
     activeChannel.provider === "local"
       ? localIsPlaying
@@ -810,16 +826,22 @@ export default function Home() {
   const handleChannelSelect = useCallback((channelId: RadioChannelId) => {
     playSound("button-press");
 
-    if (channelId === "sanctuary-os") {
+    const nextChannel = getRadioChannel(channelId);
+    const wasYoutube = activeChannel.provider === "youtube";
+    const isYoutube = nextChannel?.provider === "youtube";
+
+    if (isYoutube) {
       setShouldLoadYouTube(true);
       setLocalIsPlaying(false);
+      // Reset state when switching TO a youtube channel (fresh iframe mount
+      // on first entry; hot-swap otherwise keeps the same player alive).
       setYoutubeState("idle");
-    } else if (activeChannelId === "sanctuary-os") {
+    } else if (wasYoutube) {
       setYoutubeState("idle");
     }
 
     setActiveChannelId(channelId);
-  }, [activeChannelId, playSound]);
+  }, [activeChannel.provider, playSound]);
 
   useEffect(() => {
     if (!isRadioOpen) return;
@@ -1321,6 +1343,8 @@ export default function Home() {
                   key={channel.id}
                   isActive={channel.id === activeChannelId}
                   onClick={() => handleChannelSelect(channel.id)}
+                  pinned={channel.provider === "local"}
+                  pinnedLabel={channel.provider === "local" ? t.radio.home : undefined}
                   provider={channel.provider}
                   subtitle={channel.subtitle}
                   title={channel.title}
@@ -1344,10 +1368,25 @@ export default function Home() {
                   volume={localVolume}
                   volumeLabel={t.radio.local.volume}
                 />
+              ) : activeChannel.tracks && activeChannel.tracks.length > 0 ? (
+                <DusqkGallery
+                  key={activeChannel.id}
+                  channel={activeChannel}
+                  clickToStartLabel={t.radio.youtube.clickToStart}
+                  errorLabel={t.radio.youtube.loadError}
+                  muted={isMuted}
+                  nowPlayingLabel={t.radio.nowPlaying}
+                  onStateChange={setYoutubeState}
+                  onTrackSelect={() => playSound("task-pickup")}
+                  openLinkLabel={t.radio.youtube.openOnYoutube}
+                  playingLabel={t.radio.states.playing}
+                  reduceMotion={settings.reduceMotion}
+                  shouldLoad={shouldLoadYouTube}
+                />
               ) : (
                 <YouTubeChannelPanel
                   attributionLabel={t.radio.youtube.attribution}
-                  channel={youtubeChannel}
+                  channel={activeChannel}
                   clickToStartLabel={t.radio.youtube.clickToStart}
                   errorLabel={t.radio.youtube.loadError}
                   muted={isMuted}
@@ -1377,6 +1416,18 @@ export default function Home() {
           {t.settings.credits.version}
         </span>
       </div>
+
+      {/* Powered by The Lab */}
+      <a
+        href="https://lab.ordinarycompany.design/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t.settings.credits.poweredByAria}
+        onClick={() => playSound("button-press")}
+        className="powered-by-lab fixed bottom-4 left-4 z-10 text-xs font-bold text-gray-300 dark:text-gray-600 tracking-widest"
+      >
+        {t.settings.credits.poweredBy}
+      </a>
     </MotionConfig>
   );
 }
