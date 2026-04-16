@@ -14,7 +14,7 @@ export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const contentOpacity = interpolate(frame, [0, 15], [0, 1], {
+  const contentOpacity = interpolate(frame, [0, 20], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -25,12 +25,12 @@ export const OutroScene: React.FC = () => {
     config: { damping: 12, stiffness: 180 },
   });
 
-  const taglineOpacity = interpolate(frame, [20, 40], [0, 1], {
+  const taglineOpacity = interpolate(frame, [20, 38], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const taglineY = interpolate(frame, [20, 40], [15, 0], {
+  const taglineY = interpolate(frame, [20, 38], [15, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -46,84 +46,79 @@ export const OutroScene: React.FC = () => {
   });
 
   return (
-    <AbsoluteFill
-      style={{
-        background: "#ffffff",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 24,
-        opacity: contentOpacity * fadeOut,
-      }}
-    >
-      <Audio
-        src={staticFile("sound-fx/start-chime.wav")}
-        volume={0.25}
-      />
-
-      <div
+    <AbsoluteFill style={{ background: "#000000" }}>
+      <AbsoluteFill
         style={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          gap: 20,
+          justifyContent: "center",
+          gap: 24,
+          opacity: contentOpacity * fadeOut,
         }}
       >
+        <Audio
+          src={staticFile("sound-fx/start-chime.wav")}
+          volume={0.25}
+        />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 20,
+              overflow: "hidden",
+              transform: `scale(${Math.max(iconScale, 0)})`,
+            }}
+          >
+            <Img
+              src={staticFile("pomodorii-icon.png")}
+              style={{ width: "100%", height: "100%" }}
+            />
+          </div>
+          <span
+            style={{
+              fontSize: 56,
+              fontWeight: 700,
+              letterSpacing: -1,
+              color: "#6b7280",
+              fontFamily: "'Wii Sans', system-ui, sans-serif",
+            }}
+          >
+            Pomodorii
+          </span>
+        </div>
+
         <div
           style={{
-            width: 80,
-            height: 80,
-            borderRadius: 20,
-            overflow: "hidden",
-            transform: `scale(${Math.max(iconScale, 0)})`,
-          }}
-        >
-          <Img
-            src={staticFile("pomodorii-icon.png")}
-            style={{ width: "100%", height: "100%" }}
-          />
-        </div>
-        <span
-          style={{
-            fontSize: 56,
-            fontWeight: 700,
-            letterSpacing: -1,
-            color: "#9AA1AF",
+            fontSize: 22,
+            fontWeight: 500,
+            color: "#4b5563",
+            letterSpacing: 2,
             fontFamily: "'Wii Sans', system-ui, sans-serif",
+            opacity: taglineOpacity,
+            transform: `translateY(${taglineY}px)`,
           }}
         >
-          Pomodorii
-        </span>
-      </div>
+          Focus, beautifully.
+        </div>
 
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 500,
-          color: "#d1d5db",
-          letterSpacing: 2,
-          fontFamily: "'Wii Sans', system-ui, sans-serif",
-          opacity: taglineOpacity,
-          transform: `translateY(${taglineY}px)`,
-        }}
-      >
-        Focus, beautifully.
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: 60,
-          fontSize: 16,
-          fontWeight: 600,
-          color: "#d1d5db",
-          letterSpacing: 3,
-          fontFamily: "'Wii Sans', system-ui, sans-serif",
-          opacity: urlOpacity,
-        }}
-      >
-        pomodorii.vercel.app
-      </div>
+        <div
+          style={{
+            position: "absolute",
+            bottom: 60,
+            fontSize: 16,
+            fontWeight: 600,
+            color: "#4b5563",
+            letterSpacing: 3,
+            fontFamily: "'Wii Sans', system-ui, sans-serif",
+            opacity: urlOpacity,
+          }}
+        >
+          pomodorii.vercel.app
+        </div>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

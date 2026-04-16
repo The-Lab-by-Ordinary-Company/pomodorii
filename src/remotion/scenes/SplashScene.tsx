@@ -33,10 +33,16 @@ export const SplashScene: React.FC = () => {
     extrapolateRight: "clamp",
   });
 
+  // Fade out in last 15 frames for crossfade into DemoScene
+  const fadeOut = interpolate(frame, [45, 59], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <AbsoluteFill
       style={{
-        background: "#ffffff",
+        background: "#000000",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -49,6 +55,7 @@ export const SplashScene: React.FC = () => {
           display: "flex",
           alignItems: "center",
           gap: 24,
+          opacity: fadeOut,
         }}
       >
         <div
@@ -70,7 +77,7 @@ export const SplashScene: React.FC = () => {
             fontSize: 64,
             fontWeight: 700,
             letterSpacing: -1,
-            color: "#9AA1AF",
+            color: "#6b7280",
             opacity: textOpacity,
             transform: `translateX(${textX}px)`,
             fontFamily: "'Wii Sans', system-ui, sans-serif",
