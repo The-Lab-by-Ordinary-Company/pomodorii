@@ -8,7 +8,6 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Music,
   X,
   Clock,
   List,
@@ -24,6 +23,13 @@ import {
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence, Reorder, useDragControls, MotionConfig } from "framer-motion";
 import Image from "next/image";
+import { ChannelCard } from "@/components/radio/ChannelCard";
+import { LocalChannelPanel } from "@/components/radio/LocalChannelPanel";
+import { RadioDrawer } from "@/components/radio/RadioDrawer";
+import { RadioPill } from "@/components/radio/RadioPill";
+import { YouTubeChannelPanel } from "@/components/radio/YouTubeChannelPanel";
+import { RADIO_CHANNELS, getRadioChannel } from "@/lib/radio/channels";
+import type { RadioChannelId, RadioPlaybackState } from "@/lib/radio/types";
 import packageJson from "../../package.json";
 
 type Language = "en" | "ja" | "es" | "zh";
@@ -71,10 +77,27 @@ const TRANSLATIONS = {
     tasks: {
       placeholder: "Add a new task...",
     },
-    music: {
-      nowPlaying: "Now Playing",
-      clickToPlay: "Click to Play",
-      track: "Pomodorii Main Theme",
+    radio: {
+      title: "Pomodorii Radio",
+      subtitle: "Choose a channel",
+      states: {
+        idle: "Idle",
+        ready: "Ready",
+        playing: "Playing",
+      },
+      local: {
+        title: "Pomodorii App Channel",
+        ready: "Ready to play the built-in theme.",
+        playing: "Playing through the built-in Web Audio channel.",
+        togglePlay: "Toggle Pomodorii App Channel playback",
+        volume: "Local channel volume",
+      },
+      youtube: {
+        attribution: "Source:",
+        clickToStart: "Click play inside the player to start from the beginning.",
+        openOnYoutube: "Open on YouTube",
+        loadError: "The YouTube embed could not be loaded here. Open the original video instead.",
+      },
     },
   },
   ja: {
@@ -119,10 +142,27 @@ const TRANSLATIONS = {
     tasks: {
       placeholder: "新しいタスクを追加...",
     },
-    music: {
-      nowPlaying: "再生中",
-      clickToPlay: "クリックして再生",
-      track: "Pomodorii Radio - Chill Lo-Fi Beats",
+    radio: {
+      title: "Pomodorii Radio",
+      subtitle: "チャンネルを選択",
+      states: {
+        idle: "待機中",
+        ready: "準備完了",
+        playing: "再生中",
+      },
+      local: {
+        title: "Pomodorii App Channel",
+        ready: "内蔵テーマを再生できます。",
+        playing: "内蔵のWeb Audioチャンネルで再生中。",
+        togglePlay: "Pomodorii App Channelの再生を切り替え",
+        volume: "ローカルチャンネルの音量",
+      },
+      youtube: {
+        attribution: "ソース:",
+        clickToStart: "プレーヤー内の再生ボタンで最初から開始します。",
+        openOnYoutube: "YouTubeで開く",
+        loadError: "ここではYouTube埋め込みを読み込めませんでした。元の動画を開いてください。",
+      },
     },
   },
   es: {
@@ -167,10 +207,27 @@ const TRANSLATIONS = {
     tasks: {
       placeholder: "Añadir una nueva tarea...",
     },
-    music: {
-      nowPlaying: "Reproduciendo",
-      clickToPlay: "Clic para Reproducir",
-      track: "Pomodorii Radio - Chill Lo-Fi Beats",
+    radio: {
+      title: "Pomodorii Radio",
+      subtitle: "Elige un canal",
+      states: {
+        idle: "Inactivo",
+        ready: "Listo",
+        playing: "Reproduciendo",
+      },
+      local: {
+        title: "Pomodorii App Channel",
+        ready: "Listo para reproducir el tema integrado.",
+        playing: "Reproduciendo desde el canal integrado de Web Audio.",
+        togglePlay: "Alternar reproducción de Pomodorii App Channel",
+        volume: "Volumen del canal local",
+      },
+      youtube: {
+        attribution: "Fuente:",
+        clickToStart: "Pulsa reproducir dentro del reproductor para empezar desde el principio.",
+        openOnYoutube: "Abrir en YouTube",
+        loadError: "No se pudo cargar el embed de YouTube aquí. Abre el video original.",
+      },
     },
   },
   zh: {
@@ -215,10 +272,27 @@ const TRANSLATIONS = {
     tasks: {
       placeholder: "添加新任务...",
     },
-    music: {
-      nowPlaying: "正在播放",
-      clickToPlay: "点击播放",
-      track: "Pomodorii Radio - Chill Lo-Fi Beats",
+    radio: {
+      title: "Pomodorii Radio",
+      subtitle: "选择一个频道",
+      states: {
+        idle: "空闲",
+        ready: "就绪",
+        playing: "播放中",
+      },
+      local: {
+        title: "Pomodorii App Channel",
+        ready: "已准备好播放内置主题。",
+        playing: "正在通过内置 Web Audio 频道播放。",
+        togglePlay: "切换 Pomodorii App Channel 播放",
+        volume: "本地频道音量",
+      },
+      youtube: {
+        attribution: "来源：",
+        clickToStart: "在播放器中点击播放，从开头开始。",
+        openOnYoutube: "在 YouTube 中打开",
+        loadError: "无法在这里加载 YouTube 嵌入播放器，请打开原始视频。",
+      },
     },
   },
 };
@@ -243,8 +317,6 @@ type Task = {
   title: string;
   completed: boolean;
 };
-
-const VISUALIZER_HEIGHTS = [12, 8, 14, 6];
 
 const STATUS_STYLES = {
   finished: "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400",
@@ -375,9 +447,13 @@ export default function Home() {
   const [timeLeft, setTimeLeft] = useState(DEFAULT_SETTINGS.pomodoro * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
+  const [isRadioOpen, setIsRadioOpen] = useState(false);
+  const [activeChannelId, setActiveChannelId] = useState<RadioChannelId>("pomodorii-main-theme");
+  const [localIsPlaying, setLocalIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [musicVolume, setMusicVolume] = useState(15);
+  const [localVolume, setLocalVolume] = useState(15);
+  const [youtubeState, setYoutubeState] = useState<RadioPlaybackState>("idle");
+  const [shouldLoadYouTube, setShouldLoadYouTube] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const [pomodorosCompleted, setPomodorosCompleted] = useState(0);
@@ -391,6 +467,7 @@ export default function Home() {
   const { theme, setTheme } = useTheme();
 
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
+  const radioLauncherRef = useRef<HTMLDivElement | null>(null);
 
   const t = TRANSLATIONS[language];
 
@@ -423,6 +500,23 @@ export default function Home() {
   const loopEndRef = useRef<number>(0);
   const [isAudioContextReady, setIsAudioContextReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const activeChannel = getRadioChannel(activeChannelId) ?? RADIO_CHANNELS[0];
+  const localChannel = getRadioChannel("pomodorii-main-theme") as Extract<(typeof RADIO_CHANNELS)[number], { provider: "local" }>;
+  const youtubeChannel = getRadioChannel("sanctuary-os") as Extract<(typeof RADIO_CHANNELS)[number], { provider: "youtube" }>;
+  const activePlaybackState: RadioPlaybackState =
+    activeChannel.provider === "local"
+      ? localIsPlaying
+        ? "playing"
+        : isAudioContextReady
+          ? "ready"
+          : "idle"
+      : youtubeState;
+  const radioPillStateLabel =
+    activePlaybackState === "playing"
+      ? t.radio.states.playing
+      : activePlaybackState === "ready" || activePlaybackState === "paused"
+        ? t.radio.states.ready
+        : t.radio.states.idle;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -451,7 +545,7 @@ export default function Home() {
           gainNode.connect(ctx.destination);
           gainNodeRef.current = gainNode;
   
-          const response = await fetch(`/sound-fx/main-theme.wav?v=${Date.now()}`);
+          const response = await fetch(`${localChannel.filePath}?v=${Date.now()}`);
           const arrayBuffer = await response.arrayBuffer();
           const decodedBuffer = await ctx.decodeAudioData(arrayBuffer);
           
@@ -492,7 +586,7 @@ export default function Home() {
         audioContextRef.current.close();
       }
     };
-  }, []);
+  }, [localChannel.filePath]);
 
   const playSound = useCallback((sound: 'button-press' | 'close-delete' | 'alarm' | 'shift' | 'start-chime' | 'toggle' | 'task-pickup' | 'task-drop', force = false, pitch = 1) => {
     if (!sounds.current) return;
@@ -515,7 +609,7 @@ export default function Home() {
 
     if (!ctx || !buffer || !gainNode) return;
     
-    if (isPlayingMusic) {
+    if (localIsPlaying) {
       ctx.resume().then(() => {
         if (!musicSourceRef.current) {
           const source = ctx.createBufferSource();
@@ -533,15 +627,15 @@ export default function Home() {
         ctx.suspend();
       }
     }
-  }, [isPlayingMusic, isAudioContextReady]);
+  }, [localIsPlaying, isAudioContextReady]);
 
   useEffect(() => {
     if (!gainNodeRef.current || !audioContextRef.current) return;
-    const volume = isMuted ? 0 : musicVolume / 100;
+    const volume = isMuted ? 0 : localVolume / 100;
     const currentTime = audioContextRef.current.currentTime;
     gainNodeRef.current.gain.cancelScheduledValues(currentTime);
     gainNodeRef.current.gain.setTargetAtTime(volume, currentTime, 0.1);
-  }, [musicVolume, isMuted, isAudioContextReady]);
+  }, [localVolume, isMuted, isAudioContextReady]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -695,6 +789,66 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleTimer]);
+
+  const toggleRadioDrawer = useCallback(() => {
+    if (isRadioOpen) {
+      playSound("close-delete");
+      setIsRadioOpen(false);
+      return;
+    }
+
+    playSound("button-press");
+    setIsRadioOpen(true);
+  }, [isRadioOpen, playSound]);
+
+  const closeRadioDrawer = useCallback(() => {
+    if (!isRadioOpen) return;
+    playSound("close-delete");
+    setIsRadioOpen(false);
+  }, [isRadioOpen, playSound]);
+
+  const handleChannelSelect = useCallback((channelId: RadioChannelId) => {
+    playSound("button-press");
+
+    if (channelId === "sanctuary-os") {
+      setShouldLoadYouTube(true);
+      setLocalIsPlaying(false);
+      setYoutubeState("idle");
+    } else if (activeChannelId === "sanctuary-os") {
+      setYoutubeState("idle");
+    }
+
+    setActiveChannelId(channelId);
+  }, [activeChannelId, playSound]);
+
+  useEffect(() => {
+    if (!isRadioOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeRadioDrawer();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeRadioDrawer, isRadioOpen]);
+
+  useEffect(() => {
+    if (!isRadioOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!radioLauncherRef.current) return;
+
+      const target = event.target;
+      if (target instanceof Node && !radioLauncherRef.current.contains(target)) {
+        closeRadioDrawer();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [closeRadioDrawer, isRadioOpen]);
 
   return (
     <MotionConfig transition={{ duration: settings.reduceMotion ? 0 : 0.3 }}>
@@ -1015,7 +1169,7 @@ export default function Home() {
       )}
 
       {/* Main Content */}
-      <main className="relative z-10 flex-grow flex flex-col items-center justify-center px-4 w-full">
+      <main className="relative z-10 flex-grow flex flex-col items-center justify-center px-4 pb-32 md:pb-36 w-full">
         <div
           className="w-full max-w-sm flex flex-col items-center gap-10"
           style={{ 
@@ -1149,83 +1303,76 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Wii-Style Music Player */}
-      <footer className="relative z-10 w-full py-6 flex flex-col items-center justify-center gap-4">
-        <div className="flex flex-col md:flex-row items-center gap-4">
+      <footer className="fixed inset-x-0 bottom-0 z-30 w-full px-4 pb-6 pt-4 pointer-events-none">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 pointer-events-none">
           <div
-            className="inline-flex items-center gap-4 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)] cursor-pointer hover:scale-105 hover:border-cyan-300 hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,1)] dark:hover:shadow-[0_0_0_4px_rgba(56,189,248,0.15),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all duration-300 group"
-            onClick={() => {
-              if (isPlayingMusic) {
-                playSound("close-delete");
-              } else {
-                playSound("button-press");
-              }
-              setIsPlayingMusic(!isPlayingMusic);
-            }}
+            ref={radioLauncherRef}
+            className="radio-launcher relative flex w-full flex-col items-center gap-4 pointer-events-auto"
           >
-            <div className={`p-1.5 rounded-full ${isPlayingMusic ? 'bg-cyan-400 text-white' : 'bg-gray-200 dark:bg-[#404040] text-gray-400 dark:text-gray-300'} transition-colors duration-300`}>
-               <Music className={`w-3 h-3 ${isPlayingMusic ? 'animate-pulse' : ''}`} />
-            </div>
-            
-            <div className="flex flex-col items-start justify-center h-8 overflow-hidden w-32">
-               <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider leading-none mb-1">{t.music.nowPlaying}</div>
-               <div className="w-full overflow-hidden relative h-4">
-                {isPlayingMusic ? (
-                  <div
-                    className="whitespace-nowrap absolute text-xs font-medium text-gray-600 dark:text-gray-300 animate-[scroll-text_6s_linear_infinite]"
-                    style={{ animationDelay: "-2s" }}
-                  >
-                    {t.music.track}
-                  </div>
-                ) : (
-                   <div className="absolute inset-0 flex items-center text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                     {t.music.clickToPlay}
-                   </div>
-                 )}
-               </div>
-            </div>
+            <RadioDrawer
+              isOpen={isRadioOpen}
+              onClose={closeRadioDrawer}
+              onHoverClose={() => playSound("shift")}
+              reduceMotion={settings.reduceMotion}
+              title={t.radio.title}
+              subtitle={t.radio.subtitle}
+              cards={RADIO_CHANNELS.map((channel) => (
+                <ChannelCard
+                  key={channel.id}
+                  isActive={channel.id === activeChannelId}
+                  onClick={() => handleChannelSelect(channel.id)}
+                  provider={channel.provider}
+                  subtitle={channel.subtitle}
+                  title={channel.title}
+                />
+              ))}
+            >
+              {activeChannel.provider === "local" ? (
+                <LocalChannelPanel
+                  isPlaying={localIsPlaying}
+                  onTogglePlayback={() => {
+                    playSound(localIsPlaying ? "close-delete" : "button-press");
+                    setLocalIsPlaying((current) => !current);
+                  }}
+                  onVolumeChange={setLocalVolume}
+                  playLabel={t.radio.local.playing}
+                  readyLabel={t.radio.local.ready}
+                  reduceMotion={settings.reduceMotion}
+                  title={t.radio.local.title}
+                  toggleLabel={t.radio.local.togglePlay}
+                  trackLabel={localChannel.trackLabel}
+                  volume={localVolume}
+                  volumeLabel={t.radio.local.volume}
+                />
+              ) : (
+                <YouTubeChannelPanel
+                  attributionLabel={t.radio.youtube.attribution}
+                  channel={youtubeChannel}
+                  clickToStartLabel={t.radio.youtube.clickToStart}
+                  errorLabel={t.radio.youtube.loadError}
+                  muted={isMuted}
+                  onStateChange={setYoutubeState}
+                  openLinkLabel={t.radio.youtube.openOnYoutube}
+                  shouldLoad={shouldLoadYouTube}
+                />
+              )}
+            </RadioDrawer>
 
-            <div className="flex gap-0.5 items-end h-4 mb-1">
-               {[...Array(4)].map((_, i) => (
-                 <div 
-                   key={i} 
-                   className={`w-1 bg-cyan-400 rounded-t-sm transition-all duration-300 ${isPlayingMusic && !settings.reduceMotion ? 'animate-[pulse_0.8s_ease-in-out_infinite]' : 'h-1 bg-gray-300 dark:bg-gray-700'}`}
-                   style={{ 
-                     height: isPlayingMusic && !settings.reduceMotion ? `${VISUALIZER_HEIGHTS[i]}px` : '4px',
-                     animationDelay: `${i * 0.1}s` 
-                   }}
-                 />
-               ))}
-            </div>
+            <RadioPill
+              channelTitle={activeChannel.title}
+              isOpen={isRadioOpen}
+              isPlaying={activePlaybackState === "playing"}
+              onToggle={toggleRadioDrawer}
+              reduceMotion={settings.reduceMotion}
+              stateLabel={radioPillStateLabel}
+              title={t.radio.title}
+            />
           </div>
-
-          <AnimatePresence>
-            {isPlayingMusic && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                animate={{ opacity: 1, scale: 1, width: "auto" }}
-                exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-[#262626] dark:to-[#0a0a0a] border border-gray-300 dark:border-[#525252] shadow-[0_2px_4px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] dark:shadow-[0_2px_4px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.1)]">
-                  <Volume2 className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={musicVolume}
-                    onChange={(e) => setMusicVolume(Number(e.target.value))}
-                    className="w-24 accent-cyan-400 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full appearance-none cursor-pointer"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </footer>
       
       {/* Version Display */}
-      <div className="fixed bottom-4 right-4 z-0 pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-10 pointer-events-none">
         <span className="text-xs font-bold text-gray-300 dark:text-gray-600 tracking-widest">
           {t.settings.credits.version}
         </span>
